@@ -24,11 +24,13 @@ class PoseReconstructor:
         settings.show_largest = True
 
         self._romp = ROMP(settings)
+        self.faces = self._romp.smpl_parser.smpl_model.faces_tensor.numpy()
 
     def reconstruct(self, frame: np.ndarray) -> dict:
         """Run ROMP on a single BGR frame (as from cv2). Returns None if no
-        person was detected, else a dict with 'verts' (6890x3) and 'joints'
-        among other ROMP output keys.
+        person was detected, else a dict with 'verts' (Nx6890x3) and 'joints'
+        among other ROMP output keys. With show_largest=True, N is always 1 —
+        index verts[0]/joints[0] for the single detected person.
         """
         outputs = self._romp(frame)
         if outputs is None:

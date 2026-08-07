@@ -22,6 +22,10 @@ def render_depth_map(
     Returns a (image_height, image_width) float32 depth buffer, 0.0 where
     no geometry was hit.
     """
+    # ROMP outputs camera-space verts with Y pointing down; pyrender is Y-up.
+    verts = verts.copy()
+    verts[:, 1] *= -1
+
     mesh = trimesh.Trimesh(vertices=verts, faces=faces, process=False)
     render_mesh = pyrender.Mesh.from_trimesh(mesh)
 
