@@ -16,19 +16,34 @@ MINUTES = 60
 GENERATION_CAP = 3
 CAP_WINDOW_SECONDS = 24 * 60 * 60
 
-# pyrender needs a headless GL backend. There is no GPU/EGL on a CPU container,
-# so OSMesa (software rasterizer) is the working path — libosmesa6-dev provides it.
+# pyrender needs a headless GL backend. OSMesa was the first attempt, but
+# PyOpenGL 3.1.0 (pinned by pyrender's own deps) has broken OSMesa bindings
+# against this Mesa build (ImportError: OSMesaCreateContextAttribs) — a known
+# pyrender/PyOpenGL/OSMesa version mismatch. EGL's software path (Mesa's
+# llvmpipe rasterizer) sidesteps it entirely and needs no GPU.
+# Separately: pyrender's __init__.py unconditionally imports its interactive
+# Viewer class, which drags in pyglet's xlib windowing backend even though we
+# only use OffscreenRenderer — that import fails with no X server at all, so
+# xvfb provides a virtual one purely to satisfy the import.
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install(
         "libosmesa6-dev",
         "freeglut3-dev",
         "libgl1-mesa-glx",
+        "libgl1-mesa-dri",
+        "libegl1",
         "libglib2.0-0",
+        "libxrender1",
+        "xvfb",
         "wget",
     )
-    .env({"PYOPENGL_PLATFORM": "osmesa"})
-    .pip_install_from_requirements("requirements.txt")
+    .env({"PYOPENGL_PLATFORM": "egl"})
+    # simple-romp's setup.py imports Cython/numpy directly at build time, which
+    # fails under pip's default isolated build env — pre-install them, then
+    # install the rest with build isolation off so setup.py can see them.
+    .pip_install("numpy<2", "cython")
+    .pip_install_from_requirements("requirements.txt", extra_options="--no-build-isolation")
     # Gated, non-commercial-license file. Never in git; baked from the builder's
     # own registered copy. Path matches pose_lift.smpl_check.SMPL_PATH, which is
     # Path.home()/".romp" -> /root/.romp inside the container.
@@ -60,7 +75,14 @@ rate_limits = modal.Dict.from_name("pose-lift-rate-limits", create_if_missing=Tr
 class PoseLift:
     @modal.enter()
     def load(self):
-        """Cold start: fail fast on the gated SMPL file, then load ROMP once."""
+        """Cold start: virtual display, fail-fast SMPL guard, then load ROMP once."""
+        from pyvirtualdisplay import Display
+
+        # Must start before anything imports pyrender — its __init__.py pulls in
+        # pyglet's xlib backend at import time regardless of PYOPENGL_PLATFORM.
+        self._display = Display(visible=0, size=(640, 480))
+        self._display.start()
+
         from pose_lift.reconstruct import PoseReconstructor
 
         # PoseReconstructor.__init__ already calls require_smpl_model() first,

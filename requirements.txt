@@ -9,3 +9,4 @@ replicate
 httpx
 openai
 fastapi[standard]
+pyvirtualdisplay
