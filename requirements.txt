@@ -1,0 +1,11 @@
+simple-romp==1.1.3
+torch
+numpy<2
+opencv-python-headless
+pyrender
+trimesh
+Pillow
+replicate
+httpx
+openai
+fastapi[standard]

@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 results/
 results_joints/
-*.jpg
-*.jpeg
-*.png
+# Never commit the gated SMPL body model (non-commercial license).
+SMPL_NEUTRAL.pth
+SMPLA_NEUTRAL.pth
+*.pth
