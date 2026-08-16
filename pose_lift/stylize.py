@@ -2,6 +2,10 @@
 
 Design doc section 4. The Replicate SDK retries 429/503/504 internally
 (see replicate-python README), so no custom retry loop is needed here.
+
+flux-depth-pro reliably renders a fake stock-photo watermark/caption into the
+bottom margin regardless of prompt wording (see watermark_guard docstring) —
+every output is scrubbed before returning, so all callers get a clean image.
 """
 
 import io
@@ -11,6 +15,8 @@ import numpy as np
 from PIL import Image
 from replicate.client import Client
 from replicate.exceptions import ReplicateException
+
+from .watermark_guard import scrub_bottom_margin
 
 MODEL = "black-forest-labs/flux-depth-pro"
 
@@ -41,4 +47,4 @@ def stylize(depth_image: np.ndarray, prompt: str, *, guidance: float = 30) -> by
     except ReplicateException as e:
         raise ReplicateException(f"Replicate stylize call failed: {e}") from e
 
-    return output.read()
+    return scrub_bottom_margin(output.read())

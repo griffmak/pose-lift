@@ -16,6 +16,8 @@ from PIL import Image
 from replicate.exceptions import ReplicateException
 
 from pose_lift.capture import capture_still
+from pose_lift.crop import crop_to_9x16
+from pose_lift.prompt import enforce_prompt_hygiene
 from pose_lift.reconstruct import PoseReconstructor
 from pose_lift.render_depth import depth_to_conditioning_image, render_depth_map
 from pose_lift.stylize import stylize
@@ -60,7 +62,7 @@ def main() -> int:
     verts = outputs["verts"][0]
     h, w = frame.shape[:2]
     depth, mesh_render = render_depth_map(verts, reconstructor.faces, w, h)
-    conditioning = depth_to_conditioning_image(depth)
+    conditioning = crop_to_9x16(depth_to_conditioning_image(depth))
 
     RESULTS_DIR.mkdir(exist_ok=True)
     mesh_path = RESULTS_DIR / "mesh_render.png"
@@ -72,7 +74,7 @@ def main() -> int:
     print(f"depth conditioning image saved to {conditioning_path}")
 
     try:
-        image_bytes = stylize(conditioning, args.prompt)
+        image_bytes = stylize(conditioning, enforce_prompt_hygiene(args.prompt))
     except ReplicateException as e:
         print(f"stylize call failed: {e}", file=sys.stderr)
         print("depth conditioning image above is preserved — retry the render step without recapturing", file=sys.stderr)
