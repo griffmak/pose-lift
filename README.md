@@ -86,6 +86,18 @@ echo "NEXT_PUBLIC_MODAL_URL=<your Modal app URL>" > .env.local
 npm run dev   # or `vercel --prod` to deploy
 ```
 
+## Privacy / data handling
+
+The webcam frame is captured client-side and sent directly to your own Modal
+deployment for processing — it is not stored by this repo's code beyond the
+`results/` directory (gitignored) on the CLI, or the base64 response returned
+to the browser on the web version. The frame and the resulting depth/mesh images
+are forwarded to Replicate (for the stylized render) and OpenAI (for the prompt
+rewrite) as third-party API calls under your own API keys — see each provider's
+own data-retention policy if that matters for your use case. Nothing is persisted
+server-side between requests; Modal's rate-limit `Dict` only stores a request count
+per IP, not any image data.
+
 ## Cost control
 
 `modal_app.py` rate-limits generations per IP via `GENERATION_CAP` (default: 3 per
