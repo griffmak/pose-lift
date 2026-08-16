@@ -40,21 +40,23 @@ export default function Home() {
     }
   }
 
+  if (stage === "capturing") {
+    return (
+      <Capture
+        onCapture={(b64) => {
+          setShot(b64);
+          setStage("styling");
+        }}
+      />
+    );
+  }
+
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center gap-6 p-8">
       <h1 className="text-3xl font-bold">Pose Lift</h1>
       {error && <p className="text-red-400">{error}</p>}
 
-      {stage === "capturing" && (
-        <Capture
-          onCapture={(b64) => {
-            setShot(b64);
-            setStage("styling");
-          }}
-        />
-      )}
-
-      {shot && stage !== "capturing" && stage !== "revealing" && (
+      {shot && stage !== "revealing" && (
         <img src={`data:image/jpeg;base64,${shot}`} alt="your pose" className="max-w-[12rem] rounded-lg" />
       )}
 

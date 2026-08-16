@@ -12,9 +12,11 @@ export default function Capture({ onCapture }: { onCapture: (base64: string) => 
   useEffect(() => {
     let stream: MediaStream | null = null;
     navigator.mediaDevices
-      // Ask for a portrait stream so the server-side 9:16 crop is near-noop
-      // and no limbs get sliced off.
-      .getUserMedia({ video: { aspectRatio: { ideal: 9 / 16 }, width: { ideal: 1080 } } })
+      // No aspectRatio constraint: forcing a portrait ratio at the camera
+      // level makes some devices pick a digitally-cropped (zoomed-in) sensor
+      // mode. CSS object-cover on the <video> handles the crop-to-fill
+      // instead, using the camera's natural field of view.
+      .getUserMedia({ video: { width: { ideal: 1080 } } })
       .then((s) => {
         stream = s;
         if (videoRef.current) videoRef.current.srcObject = s;
@@ -41,20 +43,29 @@ export default function Capture({ onCapture }: { onCapture: (base64: string) => 
     return () => clearTimeout(t);
   }, [count, onCapture]);
 
-  if (error) return <p className="text-red-400">{error}</p>;
+  if (error)
+    return (
+      <p className="flex min-h-screen items-center justify-center p-8 text-red-400">{error}</p>
+    );
 
   return (
-    <div className="relative flex flex-col items-center gap-4">
-      <video ref={videoRef} autoPlay playsInline muted className="w-full max-w-sm rounded-lg" />
+    <div className="fixed inset-0 flex flex-col items-center justify-end bg-black">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="absolute inset-0 h-full w-full object-cover"
+      />
       {count !== null && count > 0 && (
-        <span className="absolute inset-0 flex items-center justify-center text-8xl font-bold">
+        <span className="absolute inset-0 z-10 flex items-center justify-center text-[8rem] font-bold text-white drop-shadow-lg">
           {count}
         </span>
       )}
       <button
         onClick={() => setCount(COUNTDOWN_SECONDS)}
         disabled={count !== null}
-        className="rounded bg-white px-6 py-3 font-semibold text-black disabled:opacity-40"
+        className="relative z-10 mb-10 rounded bg-white px-6 py-3 font-semibold text-black disabled:opacity-40"
       >
         {count === null ? "Strike a pose" : "Get ready…"}
       </button>
