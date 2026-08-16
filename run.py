@@ -59,10 +59,14 @@ def main() -> int:
 
     verts = outputs["verts"][0]
     h, w = frame.shape[:2]
-    depth = render_depth_map(verts, reconstructor.faces, w, h)
+    depth, mesh_render = render_depth_map(verts, reconstructor.faces, w, h)
     conditioning = depth_to_conditioning_image(depth)
 
     RESULTS_DIR.mkdir(exist_ok=True)
+    mesh_path = RESULTS_DIR / "mesh_render.png"
+    Image.fromarray(mesh_render).save(mesh_path)
+    print(f"3D mesh render saved to {mesh_path}")
+
     conditioning_path = RESULTS_DIR / "depth_conditioning.png"
     Image.fromarray(conditioning).save(conditioning_path)
     print(f"depth conditioning image saved to {conditioning_path}")

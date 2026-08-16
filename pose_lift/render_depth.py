@@ -44,14 +44,14 @@ def render_depth_map(
 
     renderer = pyrender.OffscreenRenderer(image_width, image_height)
     try:
-        _color, depth = renderer.render(scene)
+        color, depth = renderer.render(scene)
     finally:
         renderer.delete()
 
     if np.count_nonzero(depth) == 0:
         raise RuntimeError("depth render produced no geometry — mesh may be empty or off-camera")
 
-    return depth
+    return depth, color
 
 
 def depth_to_conditioning_image(depth: np.ndarray) -> np.ndarray:
